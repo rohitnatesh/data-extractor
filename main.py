@@ -10,28 +10,49 @@ CLIENT_SECRET = os.getenv("CLIENT_SECRET")
 APIS = {
     "domain": "https://ws.rcc.fsu.edu",
     "auth_subpath": "/auth",
-    "people_subpath": "people?canSponsor=true&page[limit]=9999&fields[people]=firstName,lastName,employeeId",
+    "people_subpath": "/people?canSponsor=true&page[limit]=9999&fields[people]=firstName,lastName,employeeId",
 }
 
 
 def get_token():
+    url = f'{APIS["domain"]}{APIS["auth_subpath"]}'
     payload = {
         "grant_type": "client_credentials",
         "client_id": CLIENT_ID,
         "client_secret": CLIENT_SECRET,
     }
-
-    response = requests.post(
-        f'{APIS.get("domain")}{APIS.get("auth_subpath")}', json=payload
-    )
+    response = requests.post(url, json=payload)
 
     if response.status_code != requests.codes.ok:
-        raise Exception("Error: Could not authenticate!")
+        raise Exception(
+            f"\nError: Request failed: {url}\nHTTP status: {response.status_code}"
+        )
 
     return response.json()
 
 
-# TODO: 2. Get people list.
+def get_all_people(token):
+    url = f'{APIS["domain"]}{APIS["people_subpath"]}'
+    headers = {"Authorization": f'{token["token_type"]} {token["access_token"]}'}
+    response = requests.get(url, headers=headers)
+
+    if response.status_code != requests.codes.ok:
+        raise Exception(f"\nRequest failed: {url}\nHTTP Status: {response.status_code}")
+
+    response = response.json()
+
+    data = [
+        {
+            "id": person["id"],
+            "firstName": person["attributes"]["firstName"],
+            "lastName": person["attributes"]["lastName"],
+        }
+        for person in response["data"]
+    ]
+
+    return data
+
+
 # TODO: 3. Read grants excel.
 # TODO: 4. Keep rows which we are interested in.
 # TODO: 5. Make entries for grant_award table. (If get all is done, mark the unpaired awards as inactive)
@@ -46,6 +67,8 @@ def main():
         )
 
     token = get_token()
+    all_people = get_all_people(token)
+    
 
 
 if __name__ == "__main__":
