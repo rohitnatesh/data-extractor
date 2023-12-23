@@ -1,6 +1,8 @@
 import os
+import sys
 import dotenv
 import requests
+import pandas as pd
 
 
 dotenv.load_dotenv()
@@ -50,10 +52,8 @@ def get_all_people(token):
         for person in response["data"]
     ]
 
-    return data
+    return pd.DataFrame(data)
 
-
-# TODO: 3. Read grants excel.
 # TODO: 4. Keep rows which we are interested in.
 # TODO: 5. Make entries for grant_award table. (If get all is done, mark the unpaired awards as inactive)
 # TODO: 6. Make entries for the grant_award table.
@@ -63,12 +63,16 @@ def get_all_people(token):
 def main():
     if CLIENT_ID is None or CLIENT_SECRET is None:
         raise Exception(
-            "Error: .env file must be contain CLIENT_ID and CLIENT_SECRET information."
+            ".env file must be contain CLIENT_ID and CLIENT_SECRET information."
         )
-
-    token = get_token()
-    all_people = get_all_people(token)
     
+    if(len(sys.argv) < 2):
+        raise Exception("Invalid usage! Path to the Grants Excel should be passed as argument.")
+
+    grants_df = pd.read_excel(sys.argv[1])
+    
+    token = get_token()
+    all_people_df = get_all_people(token)
 
 
 if __name__ == "__main__":
