@@ -114,8 +114,14 @@ def get_rcc_grants(all_rcc_people_df, grants_df):
 
 
 def main():
-    # Read the grants excel.
-    grants_df = pd.read_excel(sys.argv[1])
+    input_file_path = sys.argv[1]
+
+    # Read the grants data.
+    if input_file_path.endswith('.csv'):
+        grants_df = pd.read_csv(input_file_path)
+    else:
+        grants_df = pd.read_excel(input_file_path)
+
     # Ensure the person id (employee id) is 9 digits.
     grants_df["Person Id"] = grants_df["Person Id"].apply(
         lambda entry: str(entry).zfill(9)
